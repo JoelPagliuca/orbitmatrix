@@ -1,7 +1,11 @@
 package main
 
 import (
+	"context"
+	"crypto/rand"
+	"fmt"
 	"log"
+	"net/http"
 	"os"
 )
 
@@ -11,4 +15,28 @@ func getEnv(key, defaultVal string) string {
 	}
 	log.Printf("Using default value for %s", key)
 	return defaultVal
+}
+
+func generateUUID() string {
+	b := make([]byte, 16)
+	_, err := rand.Read(b)
+	if err != nil {
+		log.Fatal(err)
+	}
+	uuid := fmt.Sprintf("%x-%x-%x-%x-%x",
+		b[0:4], b[4:6], b[6:8], b[8:10], b[10:])
+	return uuid
+}
+
+func getRequestID(req *http.Request) string {
+	rid := req.Context().Value("request-id")
+	if rid != nil {
+		return rid.(string)
+	}
+	return ""
+}
+
+func setRequestID(req *http.Request) *http.Request {
+	ctx := context.WithValue(req.Context(), "request-id", generateUUID())
+	return req.WithContext(ctx)
 }

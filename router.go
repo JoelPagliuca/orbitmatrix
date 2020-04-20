@@ -38,7 +38,8 @@ func NewRouter() *http.ServeMux {
 	mux := http.NewServeMux()
 	for _, route := range Routes {
 		handler := route.HandlerFunc
-		handler = routeLogger(handler)
+		handler = requestRouteLogger(handler)
+		handler = requestIDGenerator(handler)
 		mux.Handle(route.Pattern, handler)
 	}
 	return mux

@@ -30,7 +30,8 @@ func (i Item) Check() bool {
 // InitDB creates db object
 func InitDB() {
 	D = &DB{
-		IDs: make(map[string]uint),
+		IDs:  make(map[string]uint),
+		data: []Item{},
 	}
 }
 
