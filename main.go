@@ -11,6 +11,7 @@ var cfg struct {
 
 func init() {
 	cfg.apiPort = getEnv("API_PORT", "7080")
+	InitDB()
 }
 
 func main() {

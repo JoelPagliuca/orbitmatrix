@@ -27,6 +27,13 @@ func (i Item) Check() bool {
 	return true
 }
 
+// InitDB creates db object
+func InitDB() {
+	D = &DB{
+		IDs: make(map[string]uint),
+	}
+}
+
 // newID gets the next available ID for a type
 func (db *DB) newID(t string) uint {
 	if id, ok := db.IDs[t]; ok {
