@@ -1,24 +1,29 @@
 package main
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
-	"time"
 )
 
 func healthcheck(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func routeLogger(next http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		start := time.Now()
-		next(w, r)
-		log.Printf(
-			"%s %s %s",
-			r.Method,
-			r.RequestURI,
-			time.Since(start),
-		)
+func getItems(w http.ResponseWriter, r *http.Request) {
+	items := D.GetItems()
+	payload, _ := json.Marshal(items)
+	w.Write(payload)
+}
+
+func addItem(w http.ResponseWriter, r *http.Request) {
+	var newItem Item
+	defer r.Body.Close()
+	err := json.NewDecoder(r.Body).Decode(&newItem)
+	if err != nil {
+		log.Println("Error: ", err.Error())
 	}
+	out, _ := D.AddItem(newItem)
+	payload, _ := json.Marshal(out)
+	w.Write(payload)
 }

@@ -6,7 +6,6 @@ import (
 
 // Route used to generate router
 type Route struct {
-	Method      string
 	Pattern     string
 	HandlerFunc http.HandlerFunc
 	Config      *RouteConfig
@@ -18,9 +17,18 @@ type RouteConfig struct{}
 // Routes all the routes for the api
 var Routes = []Route{
 	Route{
-		"GET",
 		"/health",
 		healthcheck,
+		nil,
+	},
+	Route{
+		"/items",
+		getItems,
+		nil,
+	},
+	Route{
+		"/items/add",
+		addItem,
 		nil,
 	},
 }
