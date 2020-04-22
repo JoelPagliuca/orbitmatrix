@@ -9,6 +9,12 @@ import (
 	"os"
 )
 
+type key int
+
+const (
+	requestID key = iota
+)
+
 func getEnv(key, defaultVal string) string {
 	if value, found := os.LookupEnv(key); found {
 		return value
@@ -29,7 +35,7 @@ func generateUUID() string {
 }
 
 func getRequestID(req *http.Request) string {
-	rid := req.Context().Value("request-id")
+	rid := req.Context().Value(requestID)
 	if rid != nil {
 		return rid.(string)
 	}
@@ -37,7 +43,7 @@ func getRequestID(req *http.Request) string {
 }
 
 func setRequestID(req *http.Request) *http.Request {
-	ctx := context.WithValue(req.Context(), "request-id", generateUUID())
+	ctx := context.WithValue(req.Context(), requestID, generateUUID())
 	return req.WithContext(ctx)
 }
 
