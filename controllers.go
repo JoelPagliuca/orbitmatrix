@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 )
 
@@ -16,9 +15,7 @@ func getItems(w http.ResponseWriter, r *http.Request) {
 	w.Write(payload)
 }
 
-func addItem(w http.ResponseWriter, r *http.Request) {
-	var newItem Item
-	// err := hydrateFromRequest(r, &newItem)
+func addItem(w http.ResponseWriter, r *http.Request, newItem Item) {
 	out, _ := D.AddItem(newItem)
 	payload, _ := json.Marshal(out)
 	w.Write(payload)

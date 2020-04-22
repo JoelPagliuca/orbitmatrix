@@ -6,10 +6,12 @@ import (
 	"time"
 )
 
-func requestRouteLogger(next http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+type middleware func(http.Handler) http.Handler
+
+func requestRouteLogger(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
-		next(w, r)
+		next.ServeHTTP(w, r)
 		log.Printf(
 			"%s %s %s %s",
 			r.Method,
@@ -17,12 +19,12 @@ func requestRouteLogger(next http.HandlerFunc) http.HandlerFunc {
 			time.Since(start),
 			getRequestID(r),
 		)
-	}
+	})
 }
 
-func requestIDGenerator(next http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func requestIDGenerator(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		nr := setRequestID(r)
-		next(w, nr)
-	}
+		next.ServeHTTP(w, nr)
+	})
 }

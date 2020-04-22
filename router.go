@@ -1,13 +1,14 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 )
 
 // Route used to generate router
 type Route struct {
 	Pattern     string
-	HandlerFunc http.HandlerFunc
+	HandlerFunc interface{}
 	Config      *RouteConfig
 }
 
@@ -33,14 +34,22 @@ var Routes = []Route{
 	},
 }
 
+type HandlerWrapper struct {
+	F interface{}
+}
+
+func (hw HandlerWrapper) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("wrapper instead of real func")
+}
+
 // NewRouter ...
 func NewRouter() *http.ServeMux {
 	mux := http.NewServeMux()
 	for _, route := range Routes {
-		handler := route.HandlerFunc
-		handler = requestRouteLogger(handler)
-		handler = requestIDGenerator(handler)
-		mux.Handle(route.Pattern, handler)
+		handler := HandlerWrapper{route.HandlerFunc}
+		withMiddleware := requestRouteLogger(handler)
+		withMiddleware = requestIDGenerator(handler)
+		mux.Handle(route.Pattern, withMiddleware)
 	}
 	return mux
 }
