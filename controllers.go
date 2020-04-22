@@ -18,11 +18,7 @@ func getItems(w http.ResponseWriter, r *http.Request) {
 
 func addItem(w http.ResponseWriter, r *http.Request) {
 	var newItem Item
-	defer r.Body.Close()
-	err := json.NewDecoder(r.Body).Decode(&newItem)
-	if err != nil {
-		log.Println("Error: ", err.Error())
-	}
+	// err := hydrateFromRequest(r, &newItem)
 	out, _ := D.AddItem(newItem)
 	payload, _ := json.Marshal(out)
 	w.Write(payload)
