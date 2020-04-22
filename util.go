@@ -46,5 +46,3 @@ func setRequestID(req *http.Request) *http.Request {
 	ctx := context.WithValue(req.Context(), requestID, generateUUID())
 	return req.WithContext(ctx)
 }
-
-func hydrateFromRequest(req *http.Request, thing interface{}) error { return nil }
