@@ -8,6 +8,13 @@ import (
 
 type middleware func(http.Handler) http.Handler
 
+func applyMiddleware(h http.Handler, mw ...middleware) http.Handler {
+	for _, m := range mw {
+		h = m(h)
+	}
+	return h
+}
+
 func requestRouteLogger(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()

@@ -36,6 +36,12 @@ var Routes = []Route{
 	},
 }
 
+// Middlewares the middleware to apply to all the above functions
+var Middlewares = []middleware{
+	requestRouteLogger,
+	requestIDGenerator,
+}
+
 // HandlerWrapper implements http.Handler
 type HandlerWrapper struct {
 	// must be a func(ResponseWriter, *Request)
@@ -78,8 +84,7 @@ func NewRouter() *http.ServeMux {
 	mux := http.NewServeMux()
 	for _, route := range Routes {
 		handler := HandlerWrapper{route.HandlerFunc}
-		withMiddleware := requestRouteLogger(handler)
-		withMiddleware = requestIDGenerator(withMiddleware)
+		withMiddleware := applyMiddleware(handler, Middlewares...)
 		mux.Handle(route.Pattern, withMiddleware)
 	}
 	return mux
