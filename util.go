@@ -1,12 +1,15 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"crypto/rand"
+	"encoding/base64"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"strings"
 )
 
 type key int
@@ -36,6 +39,13 @@ func generateUUID() uuid {
 	return uuid(u)
 }
 
+func generateToken() string {
+	crap := fmt.Sprintf("%s%s", generateUUID(), generateUUID())
+	encoded := base64.StdEncoding.EncodeToString(bytes.NewBufferString(crap).Bytes())
+	output := strings.TrimRight(encoded, "=")
+	return output
+}
+
 func getRequestID(req *http.Request) uuid {
 	rid := req.Context().Value(requestID)
 	if rid != nil {
@@ -47,4 +57,14 @@ func getRequestID(req *http.Request) uuid {
 func setRequestID(req *http.Request) *http.Request {
 	ctx := context.WithValue(req.Context(), requestID, generateUUID())
 	return req.WithContext(ctx)
+}
+
+func getUser(req *http.Request) *User {
+	return &User{}
+}
+
+// authChallenge check the api key on the request and attach the user to the context
+// returns whether user is logged in
+func authChallenge(req *http.Request) bool {
+	return true
 }

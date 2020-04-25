@@ -2,12 +2,14 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"time"
 )
 
 // DB "Database"
 type DB struct {
-	data []Item
+	data  []Item
+	users []User
 }
 
 // D database singleton
@@ -21,17 +23,17 @@ type Item struct {
 	Description string
 }
 
+// Check make sure the model is allowed
+func (i Item) Check() bool {
+	return true
+}
+
 // User ...
 type User struct {
 	ID          uuid
 	DateCreated time.Time
 	Name        string
-	Key         string `json:"-"`
-}
-
-// Check make sure the model is allowed
-func (i Item) Check() bool {
-	return true
+	Token       string `json:"-"`
 }
 
 // InitDB creates db object
@@ -65,4 +67,13 @@ func (db *DB) GetItem(id uint) (Item, error) {
 		return db.data[id], nil
 	}
 	return Item{}, fmt.Errorf("id not in database")
+}
+
+// AddUser ...
+func (db *DB) AddUser(u User) (User, error) {
+	u.ID = db.newID()
+	u.Token = generateToken()
+	db.users = append(db.users, u)
+	log.Println("New user created: " + u.ID)
+	return u, nil
 }
