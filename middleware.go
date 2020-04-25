@@ -15,6 +15,14 @@ func applyMiddleware(h http.Handler, cfg RouteConfig, mw ...middleware) http.Han
 	return h
 }
 
+func requestIDGenerator(next http.Handler, cfg RouteConfig) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		nr := setRequestID(r)
+		defer w.Header().Add("X-Request-ID", string(getRequestID(r)))
+		next.ServeHTTP(w, nr)
+	})
+}
+
 func requestRouteLogger(next http.Handler, c RouteConfig) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
@@ -29,22 +37,18 @@ func requestRouteLogger(next http.Handler, c RouteConfig) http.Handler {
 	})
 }
 
-func requestIDGenerator(next http.Handler, cfg RouteConfig) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		nr := setRequestID(r)
-		defer w.Header().Add("X-Request-ID", string(getRequestID(r)))
-		next.ServeHTTP(w, nr)
-	})
-}
-
 func requestAuthenticator(next http.Handler, cfg RouteConfig) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		authed := authChallenge(r)
-		if authed {
-			log.Printf("request %s authed", getRequestID(r))
-		} else {
+		req, authed := authChallenge(r)
+		if !authed {
 			log.Printf("request %s anonymous", getRequestID(r))
+			if cfg.AllowAnonymous {
+				next.ServeHTTP(w, r)
+			} else {
+				w.WriteHeader(http.StatusUnauthorized)
+			}
+			return
 		}
-		next.ServeHTTP(w, r)
+		next.ServeHTTP(w, req)
 	})
 }

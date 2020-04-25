@@ -62,11 +62,11 @@ func (db *DB) GetItems() []Item {
 }
 
 // GetItem ...
-func (db *DB) GetItem(id uint) (Item, error) {
+func (db *DB) GetItem(id uint) (*Item, error) {
 	if int(id) < len(db.data) {
-		return db.data[id], nil
+		return &db.data[id], nil
 	}
-	return Item{}, fmt.Errorf("id not in database")
+	return nil, fmt.Errorf("id not in database")
 }
 
 // AddUser ...
@@ -76,4 +76,14 @@ func (db *DB) AddUser(u User) (User, error) {
 	db.users = append(db.users, u)
 	log.Println("New user created: " + u.ID)
 	return u, nil
+}
+
+// GetUserByToken ...
+func (db *DB) GetUserByToken(t string) *User {
+	for _, u := range db.users {
+		if u.Token == t {
+			return &u
+		}
+	}
+	return nil
 }

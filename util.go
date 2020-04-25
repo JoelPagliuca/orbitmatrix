@@ -15,7 +15,8 @@ import (
 type key int
 
 const (
-	requestID key = iota
+	requestID   key = iota
+	requestUser key = iota
 )
 
 func getEnv(key, defaultVal string) string {
@@ -43,7 +44,7 @@ func generateToken() string {
 	crap := fmt.Sprintf("%s%s", generateUUID(), generateUUID())
 	encoded := base64.StdEncoding.EncodeToString(bytes.NewBufferString(crap).Bytes())
 	output := strings.TrimRight(encoded, "=")
-	return output
+	return output[0:50]
 }
 
 func getRequestID(req *http.Request) uuid {
@@ -60,11 +61,26 @@ func setRequestID(req *http.Request) *http.Request {
 }
 
 func getUser(req *http.Request) *User {
-	return &User{}
+	u := req.Context().Value(requestUser)
+	if u != nil {
+		usr := u.(User)
+		return &usr
+	}
+	return nil
 }
 
 // authChallenge check the api key on the request and attach the user to the context
 // returns whether user is logged in
-func authChallenge(req *http.Request) bool {
-	return true
+func authChallenge(req *http.Request) (*http.Request, bool) {
+	authHeader := req.Header.Get("Authorization")
+	if len(authHeader) == 0 {
+		return nil, false
+	}
+	token := authHeader[7:]
+	u := D.GetUserByToken(token)
+	if u != nil {
+		ctx := context.WithValue(req.Context(), requestUser, *u)
+		return req.WithContext(ctx), true
+	}
+	return nil, false
 }
