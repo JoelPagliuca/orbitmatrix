@@ -8,7 +8,6 @@ import (
 // DB "Database"
 type DB struct {
 	data []Item
-	IDs  map[string]uint
 }
 
 // D database singleton
@@ -16,10 +15,18 @@ var D *DB
 
 // Item a configuration item
 type Item struct {
-	ID          uint
+	ID          uuid
 	DateCreated time.Time
 	Name        string
 	Description string
+}
+
+// User ...
+type User struct {
+	ID          uuid
+	DateCreated time.Time
+	Name        string
+	Key         string `json:"-"`
 }
 
 // Check make sure the model is allowed
@@ -30,24 +37,18 @@ func (i Item) Check() bool {
 // InitDB creates db object
 func InitDB() {
 	D = &DB{
-		IDs:  make(map[string]uint),
 		data: []Item{},
 	}
 }
 
 // newID gets the next available ID for a type
-func (db *DB) newID(t string) uint {
-	if id, ok := db.IDs[t]; ok {
-		db.IDs[t]++
-		return id
-	}
-	db.IDs[t] = 1
-	return 1
+func (db *DB) newID() uuid {
+	return generateUUID()
 }
 
 // AddItem ...
 func (db *DB) AddItem(i Item) (Item, error) {
-	i.ID = db.newID("Item")
+	i.ID = db.newID()
 	i.DateCreated = time.Now()
 	db.data = append(db.data, i)
 	return i, nil
