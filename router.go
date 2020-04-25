@@ -12,33 +12,63 @@ import (
 type Route struct {
 	Pattern     string
 	HandlerFunc interface{}
-	Config      *RouteConfig
+	Config      RouteConfig
 }
 
 // RouteConfig ...
-type RouteConfig struct{}
+type RouteConfig struct {
+	AllowAnonymous bool
+	AllowedMethods []string
+}
+
+var defaultRouteConfig = RouteConfig{
+	AllowAnonymous: false,
+	AllowedMethods: []string{
+		http.MethodHead,
+		http.MethodGet,
+		http.MethodPost,
+		http.MethodPut,
+	},
+}
 
 // Routes all the routes for the api
 var Routes = []Route{
 	Route{
 		"/health",
 		healthcheck,
-		nil,
+		RouteConfig{
+			AllowAnonymous: true,
+			AllowedMethods: []string{"GET"},
+		},
 	},
 	Route{
-		"/items",
+		"/user/me",
+		getMe,
+		defaultRouteConfig,
+	},
+	Route{
+		"/user/register",
+		registerUser,
+		RouteConfig{
+			AllowAnonymous: true,
+			AllowedMethods: []string{"POST"},
+		},
+	},
+	Route{
+		"/item",
 		getItems,
-		nil,
+		defaultRouteConfig,
 	},
 	Route{
-		"/items/add",
+		"/item/add",
 		addItem,
-		nil,
+		defaultRouteConfig,
 	},
 }
 
 // Middlewares the middleware to apply to all the above functions
 var Middlewares = []middleware{
+	requestAuthenticator,
 	requestRouteLogger,
 	requestIDGenerator,
 }
@@ -114,7 +144,7 @@ func NewRouter() *http.ServeMux {
 	mux := http.NewServeMux()
 	for _, route := range Routes {
 		handler := JankedHandler{route.HandlerFunc}
-		withMiddleware := applyMiddleware(handler, Middlewares...)
+		withMiddleware := applyMiddleware(handler, route.Config, Middlewares...)
 		mux.Handle(route.Pattern, withMiddleware)
 	}
 	return mux
