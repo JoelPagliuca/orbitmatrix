@@ -2,10 +2,20 @@
 
 import requests, subprocess, time, json
 
+class cols:
+	HEADER = '\033[95m'
+	OKBLUE = '\033[94m'
+	OKGREEN = '\033[92m'
+	WARNING = '\033[93m'
+	FAIL = '\033[91m'
+	ENDC = '\033[0m'
+	BOLD = '\033[1m'
+	UNDERLINE = '\033[4m'
+
 BASE = "http://127.0.0.1:7080"
 
 def showResponse(res: requests.Response):
-	print(f"[-] {res.url[len(BASE):]} {res.status_code}", end="")
+	print(f"{cols.FAIL}[-] {res.url[len(BASE):]} {res.status_code}", end=cols.ENDC)
 	if len(res.content):
 		print(f": {json.dumps(res.json(), indent=2)}", end="")
 	print()
@@ -13,13 +23,13 @@ def showResponse(res: requests.Response):
 def do(name: str, res: requests.Response, broke: bool):
 	print(f"[*] {name}", end="")
 	if broke(res):
-		print(" FAILED")
+		print(f" {cols.FAIL}FAILED{cols.ENDC}")
 		showResponse(res)
 	else:
-		print(" PASS")
+		print(f" {cols.OKGREEN}PASS{cols.ENDC}")
 
 def startServer():
-	print(f"[*] starting the server")
+	print(f"{cols.BOLD}[*] starting the api{cols.ENDC}")
 	return subprocess.Popen(
 		"exec ./caliban", 
 		stderr=subprocess.DEVNULL, 
@@ -28,7 +38,7 @@ def startServer():
 	)
 
 def killServer(s: subprocess.Popen):
-	print(f"[*] killing the api")
+	print(f"{cols.BOLD}[*] killing the api{cols.ENDC}")
 	s.kill()
 
 def tests():
@@ -36,6 +46,14 @@ def tests():
 	do("GET /health",
 		sess.get(f"{BASE}/health"),
 		lambda res: res.status_code != 204
+	)
+	do("Do something unauthed",
+		sess.get(f"{BASE}/item"),
+		lambda res: res.status_code != 401
+	)
+	do("Do the wrong method",
+		sess.delete(f"{BASE}/health"),
+		lambda res: res.status_code != 405
 	)
 	res = sess.post(f"{BASE}/user/register", data='{"name": "Joel"}')
 	token = res.json()["Token"]
@@ -53,13 +71,17 @@ def tests():
 		sess.get(f"{BASE}/item"),
 		lambda res: len(res.json()) == 0
 	)
+	do("OPTIONS /health",
+		sess.options(f"{BASE}/health"),
+		lambda res: res.status_code != 204 or res.headers["Allow"] != "GET"
+	)
 
 def main():
 	caliban = startServer()
 	try:
 		tests()
 	except Exception as e:
-		print(f"[-] Error running tests: {e}")
+		print(f"{cols.FAIL}[-] Error running tests: {e}{cols.ENDC}")
 	killServer(caliban)
 
 if __name__ == "__main__":
