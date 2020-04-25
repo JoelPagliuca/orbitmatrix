@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -50,5 +51,20 @@ func requestAuthenticator(next http.Handler, cfg RouteConfig) http.Handler {
 			return
 		}
 		next.ServeHTTP(w, req)
+	})
+}
+
+func requestMethodChecker(next http.Handler, cfg RouteConfig) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodOptions {
+			w.Header().Add("Allow", strings.Join(cfg.AllowedMethods, ", "))
+			w.WriteHeader(204)
+		}
+		for _, m := range cfg.AllowedMethods {
+			if r.Method == m {
+				next.ServeHTTP(w, r)
+			}
+		}
+		w.WriteHeader(http.StatusMethodNotAllowed)
 	})
 }

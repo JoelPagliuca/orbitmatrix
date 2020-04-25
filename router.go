@@ -68,6 +68,7 @@ var Routes = []Route{
 
 // Middlewares the middleware to apply to all the above functions
 var Middlewares = []middleware{
+	requestMethodChecker,
 	requestAuthenticator,
 	requestRouteLogger,
 	requestIDGenerator,
