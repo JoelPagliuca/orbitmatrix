@@ -8,7 +8,7 @@ $(NAME): $(wildcard *.go)
 
 test: build
 	@echo "+ $@"
-	@./scripts/run-tests.sh
+	@./scripts/run-tests.py
 
 clean:
 	@echo "+ $@"
