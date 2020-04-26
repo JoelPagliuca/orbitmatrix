@@ -45,7 +45,7 @@ def tests():
 	sess = requests.Session()
 	do("GET /health",
 		sess.get(f"{BASE}/health"),
-		lambda res: res.status_code != 204
+		lambda res: res.status_code != 200
 	)
 	do("Do something unauthed",
 		sess.get(f"{BASE}/item"),

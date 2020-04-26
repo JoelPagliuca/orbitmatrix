@@ -5,8 +5,19 @@ import (
 	"net/http"
 )
 
-func healthcheck(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNoContent)
+type healthResponse struct {
+	Status  string
+	Entries struct {
+		Database string
+	}
+}
+
+func healthcheck(w http.ResponseWriter, r *http.Request) healthResponse {
+	out := healthResponse{
+		Status: "Healthy",
+	}
+	out.Entries.Database = "Healthy"
+	return out
 }
 
 // ITEM
