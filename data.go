@@ -8,70 +8,68 @@ import (
 
 // DB "Database"
 type DB struct {
-	data  []Item
+	items []Item
 	users []User
 }
 
 // D database singleton
 var D *DB
 
-// Item a configuration item
-type Item struct {
+type model struct {
 	ID          uuid
 	DateCreated time.Time
+}
+
+func (m *model) init() {
+	m.ID = generateUUID()
+	m.DateCreated = time.Now()
+}
+
+// Item a configuration item
+type Item struct {
+	model
 	Name        string
 	Description string
 }
 
-// Check make sure the model is allowed
-func (i Item) Check() bool {
-	return true
-}
-
 // User ...
 type User struct {
-	ID          uuid
-	DateCreated time.Time
-	Name        string
-	Token       string `json:"-"`
+	model
+	Name  string
+	Token string `json:"-"`
 }
 
 // InitDB creates db object
 func InitDB() {
 	D = &DB{
-		data: []Item{},
+		items: []Item{},
+		users: []User{},
 	}
-}
-
-// newID gets the next available ID for a type
-func (db *DB) newID() uuid {
-	return generateUUID()
 }
 
 // AddItem ...
 func (db *DB) AddItem(i Item) (Item, error) {
-	i.ID = db.newID()
-	i.DateCreated = time.Now()
-	db.data = append(db.data, i)
+	i.init()
+	db.items = append(db.items, i)
 	return i, nil
 }
 
 // GetItems ...
 func (db *DB) GetItems() []Item {
-	return db.data
+	return db.items
 }
 
 // GetItem ...
 func (db *DB) GetItem(id uint) (*Item, error) {
-	if int(id) < len(db.data) {
-		return &db.data[id], nil
+	if int(id) < len(db.items) {
+		return &db.items[id], nil
 	}
 	return nil, fmt.Errorf("id not in database")
 }
 
 // AddUser ...
 func (db *DB) AddUser(u User) (User, error) {
-	u.ID = db.newID()
+	u.init()
 	u.Token = generateToken()
 	db.users = append(db.users, u)
 	log.Println("New user created: " + u.ID)
