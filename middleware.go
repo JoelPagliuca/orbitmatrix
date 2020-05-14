@@ -64,6 +64,7 @@ func requestMethodChecker(next http.Handler, cfg RouteConfig) http.Handler {
 		for _, m := range cfg.AllowedMethods {
 			if r.Method == m {
 				next.ServeHTTP(w, r)
+				return
 			}
 		}
 		w.WriteHeader(http.StatusMethodNotAllowed)

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"log"
 	"net/http"
 )
 
@@ -27,8 +26,12 @@ func getItems(w http.ResponseWriter, r *http.Request) []Item {
 	return items
 }
 
-func addItem(w http.ResponseWriter, r *http.Request, newItem Item) Item {
-	out, _ := D.AddItem(newItem)
+type addItemInput struct {
+	I Item `from:"body"`
+}
+
+func addItem(w http.ResponseWriter, r *http.Request, in addItemInput) Item {
+	out, _ := D.AddItem(in.I)
 	return out
 }
 
@@ -45,9 +48,12 @@ type tokenResponse struct {
 	Token     string
 }
 
-func registerUser(w http.ResponseWriter, r *http.Request, u User) tokenResponse {
-	log.Println(u.Name)
-	u, _ = D.AddUser(u)
+type registerUserInput struct {
+	U User `from:"body"`
+}
+
+func registerUser(w http.ResponseWriter, r *http.Request, in registerUserInput) tokenResponse {
+	u, _ := D.AddUser(in.U)
 	res := tokenResponse{
 		ID:        u.ID,
 		TokenType: "Bearer",

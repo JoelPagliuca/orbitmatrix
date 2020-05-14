@@ -104,18 +104,32 @@ func (hw JankedHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	argv := make([]reflect.Value, sig.NumIn())
 	argv[0] = reflect.ValueOf(w)
 	argv[1] = reflect.ValueOf(r)
-	// be helpful for the rest of the inut args
-	for i := 2; i < sig.NumIn(); i++ {
-		// fill up a struct arg from the request body
-		if sig.In(i).Kind() == reflect.Struct {
-			arg := reflect.New(sig.In(i)).Interface()
-			defer r.Body.Close()
-			err := json.NewDecoder(r.Body).Decode(&arg)
-			if err != nil {
-				log.Println("Error: ", err.Error())
+	// fill up a struct arg from the request input
+	if sig.NumIn() > 2 && sig.In(2).Kind() == reflect.Struct {
+		input := sig.In(2)
+		arg := reflect.New(input).Elem()
+		// iterate over all the elements in the third argument
+		for i := 0; i < input.NumField(); i++ {
+			if !arg.Field(i).CanSet() {
+				continue
 			}
-			argv[i] = reflect.ValueOf(arg).Elem()
+			fld := input.Field(i)
+			from, ok := fld.Tag.Lookup("from")
+			if !ok {
+				continue
+			}
+			switch from {
+			case "body":
+				val := reflect.New(fld.Type)
+				defer r.Body.Close()
+				err := json.NewDecoder(r.Body).Decode(val.Interface())
+				arg.Field(i).Set(val.Elem())
+				if err != nil {
+					log.Println("Error: ", err.Error())
+				}
+			}
 		}
+		argv[2] = arg
 	}
 	// call the function
 	rets := fn.Call(argv)
