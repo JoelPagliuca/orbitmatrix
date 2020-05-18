@@ -17,7 +17,10 @@ BASE = "http://127.0.0.1:7080"
 def showResponse(res: requests.Response):
 	print(f"{cols.FAIL}[-] {res.url[len(BASE):]} {res.status_code}", end=cols.ENDC)
 	if len(res.content):
-		print(f": {json.dumps(res.json(), indent=2)}", end="")
+		try:
+			print(f": {json.dumps(res.json(), indent=2)}", end="")
+		except:
+			print(f": {str(res.content, 'utf-8')}", end="")
 	print()
 
 def do(name: str, res: requests.Response, broke: bool):
@@ -46,6 +49,10 @@ def tests():
 	do("GET /health",
 		sess.get(f"{BASE}/health"),
 		lambda res: res.status_code != 200
+	)
+	do("GET /swagger.txt",
+		sess.get(f"{BASE}/swagger.txt"),
+		lambda res: res.status_code != 204
 	)
 	do("Do something unauthed",
 		sess.get(f"{BASE}/item"),

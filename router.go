@@ -1,11 +1,7 @@
 package main
 
 import (
-	"encoding/json"
-	"fmt"
-	"log"
 	"net/http"
-	"reflect"
 )
 
 // Route used to generate router
@@ -24,10 +20,10 @@ type RouteConfig struct {
 var defaultRouteConfig = RouteConfig{
 	AllowAnonymous: false,
 	AllowedMethods: []string{
-		http.MethodHead,
 		http.MethodGet,
 		http.MethodPost,
 		http.MethodPut,
+		http.MethodHead,
 	},
 }
 
@@ -74,86 +70,6 @@ var Middlewares = []middleware{
 	requestIDGenerator,
 }
 
-// JankedHandler implements http.Handler
-// F must be one of
-// 	* func(ResponseWriter, *Request)
-// 	* func(ResponseWriter, *Request, interface{})
-// and must output one of
-// 	* nil
-// 	* interface{}
-// 	* error
-// 	* (interface{}, error)
-type JankedHandler struct {
-	F interface{}
-}
-
-// ServeHTTP - first figure out what F is and call it
-func (hw JankedHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	// function itself
-	fn := reflect.ValueOf(hw.F)
-	// function signature
-	sig := fn.Type()
-
-	// check that the first two arguments are of the correct type
-	if sig.NumIn() < 2 {
-		log.Panicln("inner function has wrong amount of args")
-	}
-	if !(reflect.TypeOf(w).AssignableTo(sig.In(0)) && reflect.TypeOf(r).AssignableTo(sig.In(1))) {
-		log.Panicln("First two args of a function were bad")
-	}
-	argv := make([]reflect.Value, sig.NumIn())
-	argv[0] = reflect.ValueOf(w)
-	argv[1] = reflect.ValueOf(r)
-	// fill up a struct arg from the request input
-	if sig.NumIn() > 2 && sig.In(2).Kind() == reflect.Struct {
-		input := sig.In(2)
-		arg := reflect.New(input).Elem()
-		// iterate over all the elements in the third argument
-		for i := 0; i < input.NumField(); i++ {
-			if !arg.Field(i).CanSet() {
-				continue
-			}
-			fld := input.Field(i)
-			from, ok := fld.Tag.Lookup("from")
-			if !ok {
-				continue
-			}
-			switch from {
-			case "body":
-				val := reflect.New(fld.Type)
-				defer r.Body.Close()
-				err := json.NewDecoder(r.Body).Decode(val.Interface())
-				arg.Field(i).Set(val.Elem())
-				if err != nil {
-					log.Println("Error: ", err.Error())
-				}
-			}
-		}
-		argv[2] = arg
-	}
-	// call the function
-	rets := fn.Call(argv)
-	// give the output to the ResponseWriter
-	for _, r := range rets {
-		if r.Kind() == reflect.Struct || r.Kind() == reflect.Slice {
-			payload, _ := json.Marshal(r.Interface())
-			w.Write(payload)
-			break
-		}
-		if r.IsNil() {
-			continue
-		}
-		if e := (*error)(nil); r.Type().Implements(reflect.TypeOf(e).Elem()) {
-			msg := fmt.Sprintf("%v", r)
-			payload, err := json.Marshal(struct{ Error string }{msg})
-			if err != nil {
-				fmt.Println(err.Error())
-			}
-			w.Write(payload)
-		}
-	}
-}
-
 // NewRouter ...
 func NewRouter() *http.ServeMux {
 	mux := http.NewServeMux()
@@ -162,5 +78,6 @@ func NewRouter() *http.ServeMux {
 		withMiddleware := applyMiddleware(handler, route.Config, Middlewares...)
 		mux.Handle(route.Pattern, withMiddleware)
 	}
+	AddSwagger(mux, Routes)
 	return mux
 }
