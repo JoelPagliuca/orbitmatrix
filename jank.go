@@ -95,10 +95,29 @@ func (hw JankedHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func AddSwagger(mux *http.ServeMux, rts []Route) {
 	log.Println("API description available on /swagger.txt")
 	rsp := "API"
+	types := make(map[reflect.Type]bool)
 	for _, r := range rts {
 		rsp += "\n---\n" + r.Pattern
 		rsp += "\nauth: " + strconv.FormatBool(!r.Config.AllowAnonymous)
 		rsp += " methods: " + strings.Join(r.Config.AllowedMethods, " ")
+		fn := reflect.ValueOf(r.HandlerFunc)
+		sig := fn.Type()
+		if sig.NumIn() >= 3 {
+			rsp += "\ninput:"
+			a3 := sig.In(2)
+			for i := 0; i < a3.NumField(); i++ {
+				fld := a3.Field(i)
+				if f, ok := fld.Tag.Lookup("from"); ok {
+					rsp += " " + fld.Type.String()[5:] + " (" + f + ") "
+					types[fld.Type] = true
+				}
+			}
+		}
+	}
+	rsp += "\n---\n\nTYPES\n---"
+	for t := range types {
+		rsp += "\n" + t.String()[5:]
+		rsp += fmt.Sprintf(" %+v", reflect.New(t).Elem())
 	}
 	mux.HandleFunc("/swagger.txt", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", "text/plain")
