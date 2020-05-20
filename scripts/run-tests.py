@@ -50,6 +50,10 @@ def tests():
 		sess.get(f"{BASE}/health"),
 		lambda res: res.status_code != 200
 	)
+	do("GET /swagger.txt",
+		sess.get(f"{BASE}/swagger.txt"),
+		lambda res: len(res.content) < 204
+	)
 	do("Do something unauthed",
 		sess.get(f"{BASE}/item"),
 		lambda res: res.status_code != 401
@@ -77,10 +81,6 @@ def tests():
 	do("OPTIONS /health",
 		sess.options(f"{BASE}/health"),
 		lambda res: res.status_code != 204 or res.headers["Allow"] != "GET"
-	)
-	do("GET /swagger.txt",
-		sess.get(f"{BASE}/swagger.txt"),
-		lambda res: res.status_code != 204
 	)
 
 def main():
