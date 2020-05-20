@@ -116,8 +116,10 @@ func AddSwagger(mux *http.ServeMux, rts []Route) {
 	}
 	rsp += "\n---\n\nTYPES\n---"
 	for t := range types {
+		n := reflect.New(t)
+		b, _ := json.Marshal(n.Interface())
 		rsp += "\n" + t.String()[5:]
-		rsp += fmt.Sprintf(" %+v", reflect.New(t).Elem())
+		rsp += fmt.Sprintf(" %v", string(b))
 	}
 	mux.HandleFunc("/swagger.txt", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", "text/plain")
