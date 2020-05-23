@@ -53,11 +53,20 @@ type registerUserInput struct {
 }
 
 func registerUser(w http.ResponseWriter, r *http.Request, in registerUserInput) tokenResponse {
-	u, _ := D.AddUser(in.U)
+	u, t, _ := D.AddUser(in.U)
 	res := tokenResponse{
 		ID:        u.ID,
 		TokenType: "Bearer",
-		Token:     u.Token,
+		Token:     t.Value,
 	}
 	return res
+}
+
+// GROUP
+
+type createGroupInput struct {
+}
+
+func createGroup(w http.ResponseWriter, r *http.Request, in createGroupInput) {
+
 }

@@ -8,8 +8,10 @@ import (
 
 // DB "Database"
 type DB struct {
-	items []Item
-	users []User
+	items  []Item
+	users  []User
+	tokens []Token
+	groups []Group
 }
 
 // D database singleton
@@ -35,8 +37,21 @@ type Item struct {
 // User ...
 type User struct {
 	model
-	Name  string
-	Token string `json:"-"`
+	Name string
+}
+
+// Token ...
+type Token struct {
+	model
+	UserID uuid
+	Value  string
+}
+
+// Group ...
+type Group struct {
+	model
+	Name        string
+	Description string
 }
 
 // InitDB creates db object
@@ -68,19 +83,33 @@ func (db *DB) GetItem(id uint) (*Item, error) {
 }
 
 // AddUser ...
-func (db *DB) AddUser(u User) (User, error) {
+func (db *DB) AddUser(u User) (User, Token, error) {
 	u.init()
-	u.Token = generateToken()
+	t := Token{
+		UserID: u.ID,
+		Value:  generateToken(),
+	}
 	db.users = append(db.users, u)
+	db.tokens = append(db.tokens, t)
 	log.Println("New user created: " + u.ID)
-	return u, nil
+	return u, t, nil
+}
+
+// GetUserByID ...
+func (db *DB) GetUserByID(i uuid) *User {
+	for _, u := range db.users {
+		if u.ID == i {
+			return &u
+		}
+	}
+	return nil
 }
 
 // GetUserByToken ...
 func (db *DB) GetUserByToken(t string) *User {
-	for _, u := range db.users {
-		if u.Token == t {
-			return &u
+	for _, u := range db.tokens {
+		if u.Value == t {
+			return db.GetUserByID(u.UserID)
 		}
 	}
 	return nil
