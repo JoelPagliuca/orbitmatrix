@@ -16,6 +16,7 @@ func init() {
 
 func main() {
 	router := NewRouter()
+	defer D.Close()
 	log.Printf("Server started on " + cfg.apiPort)
 	log.Fatal(http.ListenAndServe(":"+cfg.apiPort, router))
 }

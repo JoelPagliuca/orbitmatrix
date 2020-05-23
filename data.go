@@ -1,116 +1,68 @@
 package main
 
 import (
-	"fmt"
-	"log"
-	"time"
+	"github.com/jinzhu/gorm"
+	_ "github.com/jinzhu/gorm/dialects/sqlite"
 )
 
-// DB "Database"
-type DB struct {
-	items  []Item
-	users  []User
-	tokens []Token
-	groups []Group
-}
-
-// D database singleton
-var D *DB
-
-type model struct {
-	ID          uuid
-	DateCreated time.Time
-}
-
-func (m *model) init() {
-	m.ID = generateUUID()
-	m.DateCreated = time.Now()
-}
+// D the database
+var D *gorm.DB
 
 // Item a configuration item
 type Item struct {
-	model
+	gorm.Model
 	Name        string
 	Description string
 }
 
 // User ...
 type User struct {
-	model
+	gorm.Model
 	Name string
 }
 
 // Token ...
 type Token struct {
-	model
-	UserID uuid
+	gorm.Model
+	UserID uint
+	User   User
 	Value  string
+}
+
+// BeforeSave set the token value
+func (t *Token) BeforeSave() (err error) {
+	t.Value = generateToken()
+	return nil
 }
 
 // Group ...
 type Group struct {
-	model
+	gorm.Model
 	Name        string
 	Description string
 }
 
 // InitDB creates db object
 func InitDB() {
-	D = &DB{
-		items: []Item{},
-		users: []User{},
+	DB, err := gorm.Open("sqlite3", ":memory:")
+	if err != nil {
+		panic("Couldn't connect to database")
 	}
+	DB.AutoMigrate(
+		&User{},
+		&Token{},
+		&Group{},
+		&Item{},
+	)
+	D = DB
 }
 
-// AddItem ...
-func (db *DB) AddItem(i Item) (Item, error) {
-	i.init()
-	db.items = append(db.items, i)
-	return i, nil
-}
-
-// GetItems ...
-func (db *DB) GetItems() []Item {
-	return db.items
-}
-
-// GetItem ...
-func (db *DB) GetItem(id uint) (*Item, error) {
-	if int(id) < len(db.items) {
-		return &db.items[id], nil
+// GetUserByToken TODO
+func GetUserByToken(t string) *User {
+	tok := Token{}
+	err := D.Preload("User").Where("value = ?", t).First(&tok).Error
+	if err != nil {
+		return nil
 	}
-	return nil, fmt.Errorf("id not in database")
-}
-
-// AddUser ...
-func (db *DB) AddUser(u User) (User, Token, error) {
-	u.init()
-	t := Token{
-		UserID: u.ID,
-		Value:  generateToken(),
-	}
-	db.users = append(db.users, u)
-	db.tokens = append(db.tokens, t)
-	log.Println("New user created: " + u.ID)
-	return u, t, nil
-}
-
-// GetUserByID ...
-func (db *DB) GetUserByID(i uuid) *User {
-	for _, u := range db.users {
-		if u.ID == i {
-			return &u
-		}
-	}
-	return nil
-}
-
-// GetUserByToken ...
-func (db *DB) GetUserByToken(t string) *User {
-	for _, u := range db.tokens {
-		if u.Value == t {
-			return db.GetUserByID(u.UserID)
-		}
-	}
-	return nil
+	return &tok.User
 }

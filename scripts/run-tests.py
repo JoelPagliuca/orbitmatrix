@@ -54,13 +54,13 @@ def tests():
 		sess.get(f"{BASE}/swagger.txt"),
 		lambda res: len(res.content) < 204
 	)
-	do("Do something unauthed",
-		sess.get(f"{BASE}/item"),
-		lambda res: res.status_code != 401
-	)
 	do("Do the wrong method",
 		sess.delete(f"{BASE}/health"),
 		lambda res: res.status_code != 405
+	)
+	do("Do something unauthed",
+		sess.get(f"{BASE}/item"),
+		lambda res: res.status_code != 401
 	)
 	res = sess.post(f"{BASE}/user/register", data='{"name": "Joel"}')
 	token = res.json()["Token"]
@@ -68,7 +68,7 @@ def tests():
 	sess.headers.update({"Authorization": f"Bearer {token}"})
 	do("GET /user/me",
 		sess.get(f"{BASE}/user/me"),
-		lambda res: res.json()["ID"] == "" or res.json()["Name"] == ""
+		lambda res: res.json()["ID"] == 0 or res.json()["Name"] == ""
 	)
 	do("POST /item/add",
 		sess.post(f"{BASE}/item/add", data='{"name":"item1", "description":"item 1"}'),
@@ -81,6 +81,11 @@ def tests():
 	do("OPTIONS /health",
 		sess.options(f"{BASE}/health"),
 		lambda res: res.status_code != 204 or res.headers["Allow"] != "GET"
+	)
+	sess.headers.update({"Authorization": "Bearer abadtoken"})
+	do("Do something with a bad token",
+		sess.get(f"{BASE}/item"),
+		lambda res: res.status_code != 401
 	)
 
 def main():

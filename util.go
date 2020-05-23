@@ -77,7 +77,7 @@ func authChallenge(req *http.Request) (*http.Request, bool) {
 		return nil, false
 	}
 	token := authHeader[7:]
-	u := D.GetUserByToken(token)
+	u := GetUserByToken(token)
 	if u != nil {
 		ctx := context.WithValue(req.Context(), requestUser, *u)
 		return req.WithContext(ctx), true

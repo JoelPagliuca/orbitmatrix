@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"net/http"
 )
 
@@ -15,14 +16,20 @@ func healthcheck(w http.ResponseWriter, r *http.Request) healthResponse {
 	out := healthResponse{
 		Status: "Healthy",
 	}
-	out.Entries.Database = "Healthy"
+	D.Select("1")
+	if len(D.GetErrors()) == 0 {
+		out.Entries.Database = "Healthy"
+	} else {
+		log.Printf("DB Errors: %s", D.Error)
+	}
 	return out
 }
 
 // ITEM
 
 func getItems(w http.ResponseWriter, r *http.Request) []Item {
-	items := D.GetItems()
+	items := []Item{}
+	D.Find(&items)
 	return items
 }
 
@@ -31,8 +38,8 @@ type addItemInput struct {
 }
 
 func addItem(w http.ResponseWriter, r *http.Request, in addItemInput) Item {
-	out, _ := D.AddItem(in.I)
-	return out
+	D.Create(&in.I)
+	return in.I
 }
 
 // USER
@@ -43,7 +50,7 @@ func getMe(w http.ResponseWriter, r *http.Request) User {
 }
 
 type tokenResponse struct {
-	ID        uuid
+	ID        uint
 	TokenType string
 	Token     string
 }
@@ -53,9 +60,14 @@ type registerUserInput struct {
 }
 
 func registerUser(w http.ResponseWriter, r *http.Request, in registerUserInput) tokenResponse {
-	u, t, _ := D.AddUser(in.U)
+	if !D.NewRecord(in.U) {
+		return tokenResponse{}
+	}
+	D.Create(&in.U)
+	t := Token{UserID: in.U.ID}
+	D.Create(&t)
 	res := tokenResponse{
-		ID:        u.ID,
+		ID:        in.U.ID,
 		TokenType: "Bearer",
 		Token:     t.Value,
 	}

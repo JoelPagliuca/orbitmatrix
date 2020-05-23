@@ -10,6 +10,10 @@ test: build
 	@echo "+ $@"
 	@./scripts/run-tests.py
 
+run: build
+	@echo "+ $@"
+	@./$(NAME)
+
 clean:
 	@echo "+ $@"
 	rm -f $(NAME)
