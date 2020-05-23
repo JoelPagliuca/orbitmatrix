@@ -85,6 +85,7 @@ def tests():
 
 def main():
 	caliban = startServer()
+	time.sleep(0.1)
 	try:
 		tests()
 	except Exception as e:
