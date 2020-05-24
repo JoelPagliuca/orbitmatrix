@@ -33,12 +33,15 @@ func getItems(w http.ResponseWriter, r *http.Request) []Item {
 	return items
 }
 
-type addItemInput struct {
+type itemInput struct {
 	I Item `from:"body"`
 }
 
-func addItem(w http.ResponseWriter, r *http.Request, in addItemInput) Item {
-	D.Create(&in.I)
+func addItem(w http.ResponseWriter, r *http.Request, in itemInput) Item {
+	if err := D.Create(&in.I).Error; err != nil {
+		log.Println(err)
+		return Item{}
+	}
 	return in.I
 }
 
@@ -76,9 +79,14 @@ func registerUser(w http.ResponseWriter, r *http.Request, in registerUserInput) 
 
 // GROUP
 
-type createGroupInput struct {
+type groupInput struct {
+	G Group `from:"body"`
 }
 
-func createGroup(w http.ResponseWriter, r *http.Request, in createGroupInput) {
-
+func createGroup(w http.ResponseWriter, r *http.Request, in groupInput) Group {
+	if err := D.Create(&in.G).Error; err != nil {
+		log.Println(err)
+		return Group{}
+	}
+	return in.G
 }
