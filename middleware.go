@@ -19,7 +19,7 @@ func applyMiddleware(h http.Handler, cfg RouteConfig, mw ...middleware) http.Han
 func requestIDGenerator(next http.Handler, cfg RouteConfig) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		nr := setRequestID(r)
-		defer w.Header().Add("X-Request-ID", string(getRequestID(r)))
+		w.Header().Add("X-Request-ID", string(getRequestID(nr)))
 		next.ServeHTTP(w, nr)
 	})
 }
