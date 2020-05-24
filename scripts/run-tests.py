@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import requests, subprocess, time, json
+import requests, subprocess, time, json, threading
 
 class cols:
 	HEADER = '\033[95m'
@@ -13,31 +13,50 @@ class cols:
 	UNDERLINE = '\033[4m'
 
 BASE = "http://127.0.0.1:7080"
+PROC: subprocess.Popen = None
+SERVER_LOGS = [[]]
+FUNC_NUMBER = 0
 
 def showResponse(res: requests.Response):
-	print(f"{cols.FAIL}[-] {res.url[len(BASE):]} {res.status_code}", end=cols.ENDC)
+	print(f"{cols.FAIL}[-] {res.url[len(BASE):]} {res.status_code}")
 	if len(res.content):
+		print(f"{cols.WARNING}[*] Response body")
 		try:
-			print(f": {json.dumps(res.json(), indent=2)}", end="")
+			print(f"{json.dumps(res.json(), indent=2)}", end=cols.ENDC)
 		except:
-			print(f": {str(res.content, 'utf-8')}", end="")
+			print(f"{str(res.content, 'utf-8')}", end=cols.ENDC)
+	logs = SERVER_LOGS[FUNC_NUMBER-1]
+	print()
+	if len(logs):
+		print(f"{cols.WARNING}[*] Server logs")
+		print("".join(logs))
 	print()
 
 def do(name: str, res: requests.Response, broke: bool):
+	global FUNC_NUMBER
+	FUNC_NUMBER += 1
 	print(f"[*] {name}", end="")
+	rid = res.headers.get("X-Request-ID", "(no ID)")
 	if broke(res):
-		print(f" {cols.FAIL}FAILED{cols.ENDC}")
+		print(f" {cols.FAIL}FAILED{cols.ENDC} {rid}")
 		showResponse(res)
 	else:
 		print(f" {cols.OKGREEN}PASS{cols.ENDC}")
 
+def serverLogs():
+	for line in PROC.stdout:
+		if len(SERVER_LOGS) >= FUNC_NUMBER:
+			SERVER_LOGS.append([])
+		SERVER_LOGS[FUNC_NUMBER].append(str(line, "utf-8"))
+
 def startServer():
 	print(f"{cols.BOLD}[*] starting the api{cols.ENDC}")
 	return subprocess.Popen(
-		"exec ./caliban", 
-		stderr=subprocess.DEVNULL, 
-		stdout=subprocess.DEVNULL, 
-		shell=True
+		"exec ./caliban",
+		stderr=subprocess.STDOUT,
+		stdout=subprocess.PIPE,
+		shell=True,
+		bufsize=1,
 	)
 
 def killServer(s: subprocess.Popen):
@@ -78,6 +97,14 @@ def tests():
 		sess.get(f"{BASE}/item"),
 		lambda res: len(res.json()) == 0
 	)
+	do("POST /group/add",
+		sess.post(f"{BASE}/group/add", data='{"name":"group1", "description":"group 1"}'),
+		lambda res: res.json()["ID"] == "" or res.json()["Name"] == ""
+	)
+	do("GET /group",
+		sess.get(f"{BASE}/group"),
+		lambda res: len(res.json()) == 0
+	)
 	do("OPTIONS /health",
 		sess.options(f"{BASE}/health"),
 		lambda res: res.status_code != 204 or res.headers["Allow"] != "GET"
@@ -89,12 +116,16 @@ def tests():
 	)
 
 def main():
+	global PROC
 	caliban = startServer()
+	PROC = caliban
 	time.sleep(0.1)
+	thread = threading.Thread(target=serverLogs)
+	thread.start()
 	try:
 		tests()
 	except Exception as e:
-		print(f"{cols.FAIL}[-] Error running tests: {e}{cols.ENDC}")
+		print(f"{cols.FAIL}\n[-] Error running tests: {e}{cols.ENDC}")
 	killServer(caliban)
 
 if __name__ == "__main__":
