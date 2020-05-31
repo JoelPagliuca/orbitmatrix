@@ -65,6 +65,11 @@ var Routes = []Route{
 		createGroup,
 		defaultRouteConfig,
 	},
+	Route{
+		"/group",
+		getGroups,
+		defaultRouteConfig,
+	},
 }
 
 // Middlewares the middleware to apply to all the above functions

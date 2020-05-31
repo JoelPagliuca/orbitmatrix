@@ -90,3 +90,9 @@ func createGroup(w http.ResponseWriter, r *http.Request, in groupInput) Group {
 	}
 	return in.G
 }
+
+func getGroups(w http.ResponseWriter, r *http.Request) []Group {
+	groups := []Group{}
+	D.Find(&groups)
+	return groups
+}
