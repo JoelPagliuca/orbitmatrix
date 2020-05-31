@@ -1,6 +1,8 @@
 package main
 
 import (
+	"os"
+
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
 )
@@ -40,11 +42,16 @@ type Group struct {
 	gorm.Model
 	Name        string
 	Description string
+	Members     []User `gorm:"many2many:group_users;"`
 }
 
 // InitDB creates db object
 func InitDB() {
-	DB, err := gorm.Open("sqlite3", ":memory:")
+	filename, ok := os.LookupEnv("CALIBAN_DB_FILE")
+	if !ok {
+		filename = ":memory:"
+	}
+	DB, err := gorm.Open("sqlite3", filename)
 	if err != nil {
 		panic("Couldn't connect to database")
 	}
@@ -57,7 +64,7 @@ func InitDB() {
 	D = DB
 }
 
-// GetUserByToken TODO
+// GetUserByToken ...
 func GetUserByToken(t string) *User {
 	tok := Token{}
 	err := D.Preload("User").Where("value = ?", t).First(&tok).Error
