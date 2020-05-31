@@ -30,7 +30,7 @@ def showResponse(res: requests.Response):
 	if len(logs):
 		print(f"{cols.WARNING}[*] Server logs")
 		print("".join(logs))
-	print()
+	print(cols.ENDC)
 
 def do(name: str, res: requests.Response, broke: bool):
 	global FUNC_NUMBER
@@ -83,6 +83,7 @@ def tests():
 	)
 	res = sess.post(f"{BASE}/user/register", data='{"name": "Joel"}')
 	token = res.json()["Token"]
+	userId = res.json()["ID"]
 	print(f"[+] Got token {token}")
 	sess.headers.update({"Authorization": f"Bearer {token}"})
 	do("GET /user/me",
@@ -104,6 +105,15 @@ def tests():
 	do("GET /group",
 		sess.get(f"{BASE}/group"),
 		lambda res: len(res.json()) == 0
+	)
+	groupId = sess.get(f"{BASE}/group").json()[0]["ID"]
+	do("Add user to group",
+		sess.post(f"{BASE}/group/member/add", params={"GroupID": groupId, "UserID": [userId]}),
+		lambda res: res.status_code != 204
+	)
+	do("Check the user is in the group",
+		sess.get(f"{BASE}/group", params={"GroupID": groupId}),
+		lambda res: res.json()[0]["ID"] != userId
 	)
 	do("OPTIONS /health",
 		sess.options(f"{BASE}/health"),
