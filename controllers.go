@@ -92,9 +92,24 @@ func createGroup(w http.ResponseWriter, r *http.Request, in groupInput) Group {
 	return in.G
 }
 
-func getGroups(w http.ResponseWriter, r *http.Request) []Group {
+type getGroupsInput struct {
+	GroupID uint
+}
+
+func getGroups(w http.ResponseWriter, r *http.Request, in getGroupsInput) []Group {
 	groups := []Group{}
-	D.Find(&groups)
+	q := r.URL.Query()
+	gidS := q.Get("GroupID")
+	gid, err := strconv.ParseUint(gidS, 10, 64)
+	if err != nil {
+		log.Println(err.Error())
+	}
+	in.GroupID = uint(gid)
+	if in.GroupID > 0 {
+		D.Find(&groups, in.GroupID)
+	} else {
+		D.Find(&groups)
+	}
 	return groups
 }
 
