@@ -81,10 +81,14 @@ def tests():
 		sess.get(f"{BASE}/item"),
 		lambda res: res.status_code != 401
 	)
+	do("OPTIONS /user/register",
+		sess.options(f"{BASE}/user/register"),
+		lambda res: res.headers["Allow"] != "POST"
+	)
 	res = sess.post(f"{BASE}/user/register", data='{"name": "Joel"}')
 	token = res.json()["Token"]
 	userId = res.json()["ID"]
-	print(f"[+] Got token {token}")
+	print(f"[+] Registered user with token {token}")
 	sess.headers.update({"Authorization": f"Bearer {token}"})
 	do("GET /user/me",
 		sess.get(f"{BASE}/user/me"),
