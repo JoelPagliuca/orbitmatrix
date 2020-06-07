@@ -60,9 +60,22 @@ func (hw JankedHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				val := reflect.New(fld.Type)
 				defer r.Body.Close()
 				err := json.NewDecoder(r.Body).Decode(val.Interface())
-				arg.Field(i).Set(val.Elem())
 				if err != nil {
 					log.Println("Error: ", err.Error())
+				}
+				arg.Field(i).Set(val.Elem())
+			case "query":
+				q := r.URL.Query()
+				s := q.Get(fld.Name)
+				if fld.Type.Kind() == reflect.String {
+					arg.Field(i).Set(reflect.ValueOf(s))
+				} else if fld.Type.Kind() == reflect.Uint {
+					psd, err := strconv.ParseUint(s, 10, 64)
+					if err != nil {
+						log.Println(err.Error())
+						arg.Field(i).Set(reflect.ValueOf(uint(0)))
+					}
+					arg.Field(i).Set(reflect.ValueOf(uint(psd)))
 				}
 			}
 		}
@@ -108,7 +121,11 @@ func AddSwagger(mux *http.ServeMux, rts []Route) {
 			for i := 0; i < a3.NumField(); i++ {
 				fld := a3.Field(i)
 				if f, ok := fld.Tag.Lookup("from"); ok {
-					rsp += " " + fld.Type.String()[5:] + " (" + f + ") "
+					rsp += " " + strings.ReplaceAll(fld.Type.String(), "main.", "") + " (" + f
+					if f == "query" {
+						rsp += " " + fld.Name
+					}
+					rsp += ") "
 					types[fld.Type] = true
 				}
 			}
@@ -125,7 +142,7 @@ func AddSwagger(mux *http.ServeMux, rts []Route) {
 	for t := range types {
 		n := reflect.New(t)
 		b, _ := json.Marshal(n.Interface())
-		rsp += "\n" + t.String()[5:]
+		rsp += "\n" + strings.ReplaceAll(t.String(), "main.", "")
 		rsp += fmt.Sprintf(" %v", string(b))
 	}
 	rsp += "\n---\n"

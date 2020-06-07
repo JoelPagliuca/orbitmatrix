@@ -73,3 +73,13 @@ func GetUserByToken(t string) *User {
 	}
 	return &tok.User
 }
+
+// TODO: GetTransitiveMembers
+func GetTransitiveMembers(groupID uint) []User {
+	return []User{}
+}
+
+// TODO: GetTransitiveMemberOf
+func GetTransitiveMemberOf(userID uint) []Group {
+	return []Group{}
+}

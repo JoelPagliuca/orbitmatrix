@@ -117,7 +117,7 @@ def tests():
 	)
 	do("Check the user is in the group",
 		sess.get(f"{BASE}/group", params={"GroupID": groupId}),
-		lambda res: res.json()[0]["ID"] != userId
+		lambda res: res.json()[0]["Members"][0]["ID"] != userId
 	)
 	do("OPTIONS /health",
 		sess.options(f"{BASE}/health"),

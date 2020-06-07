@@ -93,39 +93,26 @@ func createGroup(w http.ResponseWriter, r *http.Request, in groupInput) Group {
 }
 
 type getGroupsInput struct {
-	GroupID uint
+	GroupID uint `from:"query"`
 }
 
 func getGroups(w http.ResponseWriter, r *http.Request, in getGroupsInput) []Group {
 	groups := []Group{}
-	q := r.URL.Query()
-	gidS := q.Get("GroupID")
-	gid, err := strconv.ParseUint(gidS, 10, 64)
-	if err != nil {
-		log.Println(err.Error())
-	}
-	in.GroupID = uint(gid)
 	if in.GroupID > 0 {
-		D.Find(&groups, in.GroupID)
+		D.Preload("Members").Find(&groups, in.GroupID)
 	} else {
-		D.Find(&groups)
+		D.Preload("Members").Find(&groups)
 	}
 	return groups
 }
 
 type addGroupMembersInput struct {
-	GroupID uint
+	GroupID uint `from:"query"`
 	UserID  []uint
 }
 
 func addGroupMembers(w http.ResponseWriter, r *http.Request, in addGroupMembersInput) {
 	q := r.URL.Query()
-	gidS := q.Get("GroupID")
-	gid, err := strconv.ParseUint(gidS, 10, 64)
-	if err != nil {
-		log.Println(err.Error())
-	}
-	in.GroupID = uint(gid)
 	uidS, ok := q["UserID"]
 	if ok {
 		for _, u := range uidS {
@@ -143,7 +130,7 @@ func addGroupMembers(w http.ResponseWriter, r *http.Request, in addGroupMembersI
 		us.ID = u
 		D.Model(&group).Association("Members").Append(us)
 	}
-	err = D.Error
+	err := D.Error
 	if err != nil {
 		log.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
