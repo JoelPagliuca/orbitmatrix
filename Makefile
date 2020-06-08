@@ -6,7 +6,13 @@ $(NAME): $(wildcard *.go)
 	@echo "+ $@"
 	go build
 
-test: build
+test: test-unit test-contract
+
+test-unit:
+	@echo "+ $@"
+	@go test
+
+test-contract: build
 	@echo "+ $@"
 	@./scripts/run-tests.py
 

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"os"
 
 	"github.com/jinzhu/gorm"
@@ -42,11 +43,12 @@ type Group struct {
 	gorm.Model
 	Name        string
 	Description string
-	Members     []User `gorm:"many2many:group_users;"`
+	Members     []*User  `gorm:"many2many:group_users;"`
+	Subgroups   []*Group `gorm:"many2many:subgroups;association_jointable_foreignkey:subgroup_id"`
 }
 
 // InitDB creates db object
-func InitDB() {
+func InitDB() *gorm.DB {
 	filename, ok := os.LookupEnv("CALIBAN_DB_FILE")
 	if !ok {
 		filename = ":memory:"
@@ -61,7 +63,11 @@ func InitDB() {
 		&Group{},
 		&Item{},
 	)
+	if DB.Error != nil {
+		log.Println("Migration failed: " + DB.Error.Error())
+	}
 	D = DB
+	return D
 }
 
 // GetUserByToken ...
@@ -74,12 +80,31 @@ func GetUserByToken(t string) *User {
 	return &tok.User
 }
 
-// TODO: GetTransitiveMembers
-func GetTransitiveMembers(groupID uint) []User {
-	return []User{}
+// GetTransitiveMembers gets members in this group including subgroups
+func GetTransitiveMembers(db *gorm.DB, groupID uint) []User {
+	users := make(map[uint]User)
+	_getTransitiveMembers(db, groupID, users)
+	out := []User{}
+	for _, u := range users {
+		out = append(out, u)
+	}
+	return out
+}
+
+func _getTransitiveMembers(db *gorm.DB, g uint, u map[uint]User) {
+	group := Group{}
+	if err := db.Preload("Subgroups").Preload("Members").First(&group, g).Error; err != nil {
+		return
+	}
+	for _, usr := range group.Members {
+		u[usr.ID] = *usr
+	}
+	for _, gr := range group.Subgroups {
+		_getTransitiveMembers(db, gr.ID, u)
+	}
 }
 
 // TODO: GetTransitiveMemberOf
-func GetTransitiveMemberOf(userID uint) []Group {
+func GetTransitiveMemberOf(db *gorm.DB, userID uint) []Group {
 	return []Group{}
 }
