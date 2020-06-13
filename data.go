@@ -104,7 +104,77 @@ func _getTransitiveMembers(db *gorm.DB, g uint, u map[uint]User) {
 	}
 }
 
-// TODO: GetTransitiveMemberOf
+// GetTransitiveMemberOf get the groups the user is member of
 func GetTransitiveMemberOf(db *gorm.DB, userID uint) []Group {
-	return []Group{}
+	grps := make(map[uint]Group)
+	out := _getMemberOf(db, userID)
+	for _, grp := range out {
+		grps[grp.ID] = grp
+		_getTransitiveMemberOf(db, grp.ID, grps)
+	}
+	out = []Group{}
+	for _, g := range grps {
+
+		out = append(out, g)
+	}
+	return out
+}
+
+// _getMemberOf immediate groups of the user
+func _getMemberOf(db *gorm.DB, uid uint) []Group {
+	grps := []Group{}
+	gids := []uint{}
+	rows, err := db.Table("group_users").Where("user_id = ?", uid).Select("group_id").Rows()
+	if err != nil {
+		log.Println(err)
+	}
+	for rows.Next() {
+		var gid uint
+		err = rows.Scan(&gid)
+		if err != nil {
+			log.Println(err)
+			return grps
+		}
+		gids = append(gids, gid)
+	}
+	for _, i := range gids {
+		var grp Group
+		if err := db.First(&grp, i).Error; err == nil {
+			grps = append(grps, grp)
+		}
+	}
+	return grps
+}
+
+func _getSubgroupOf(db *gorm.DB, gid uint) []Group {
+	grps := []Group{}
+	gids := []uint{}
+	rows, err := db.Table("subgroups").Where("subgroup_id = ?", gid).Select("group_id").Rows()
+	if err != nil {
+		log.Println(err)
+	}
+	for rows.Next() {
+		var gid uint
+		err = rows.Scan(&gid)
+		if err != nil {
+			log.Println(err)
+			return grps
+		}
+		gids = append(gids, gid)
+	}
+	for _, gid := range gids {
+		var grp Group
+		if err := db.First(&grp, gid).Error; err == nil {
+			grps = append(grps, grp)
+		}
+	}
+	return grps
+}
+
+func _getTransitiveMemberOf(db *gorm.DB, gid uint, g map[uint]Group) {
+	grps := _getSubgroupOf(db, gid)
+	for _, grp := range grps {
+		g[grp.ID] = grp
+		_getTransitiveMemberOf(db, grp.ID, g)
+	}
 }
