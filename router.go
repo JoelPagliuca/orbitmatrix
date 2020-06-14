@@ -75,6 +75,22 @@ var Routes = []Route{
 		addGroupMembers,
 		defaultRouteConfig,
 	},
+	Route{
+		"/group/member",
+		getTransitiveMembers,
+		RouteConfig{
+			AllowAnonymous: false,
+			AllowedMethods: []string{"GET"},
+		},
+	},
+	Route{
+		"/user/memberof",
+		getTransitiveGroups,
+		RouteConfig{
+			AllowAnonymous: false,
+			AllowedMethods: []string{"GET"},
+		},
+	},
 }
 
 // Middlewares the middleware to apply to all the above functions

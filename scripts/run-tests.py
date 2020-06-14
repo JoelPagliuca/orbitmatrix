@@ -89,7 +89,7 @@ def tests():
 	)
 	res = sess.post(f"{BASE}/user/register", data='{"name": "Joel"}')
 	token = res.json()["Token"]
-	userId = res.json()["ID"]
+	userId1 = res.json()["ID"]
 	print(f"[+] Registered user with token {token}")
 	sess.headers.update({"Authorization": f"Bearer {token}"})
 	do("GET /user/me",
@@ -114,14 +114,28 @@ def tests():
 		sess.get(f"{BASE}/group"),
 		lambda res: len(res.json()) == 0
 	)
-	groupId = sess.get(f"{BASE}/group").json()[0]["ID"]
+	groupId1 = sess.get(f"{BASE}/group").json()[0]["ID"]
 	do("Add user to group",
-		sess.post(f"{BASE}/group/member/add", params={"GroupID": groupId, "UserID": [userId]}),
+		sess.post(f"{BASE}/group/member/add", params={"GroupID": groupId1, "UserID": [userId1]}),
 		lambda res: res.status_code != 204
 	)
 	do("Check the user is in the group",
-		sess.get(f"{BASE}/group", params={"GroupID": groupId}),
-		lambda res: res.json()[0]["Members"][0]["ID"] != userId
+		sess.get(f"{BASE}/group", params={"GroupID": groupId1}),
+		lambda res: res.json()[0]["Members"][0]["ID"] != userId1
+	)
+	print(f"[*] setting up group2->[user2, group1], group1->[user1]")
+	res = sess.post(f"{BASE}/user/register", data='{"name": "Joel2"}')
+	userId2 = res.json()["ID"]
+	res = sess.post(f"{BASE}/group/add", data='{"name":"group2", "description":"group 2"}')
+	groupId2 = res.json()["ID"]
+	sess.post(f"{BASE}/group/member/add", params={"GroupID": groupId2, "UserID": [userId2], "SubgroupID": [groupId1]}),
+	do("Check the transitive members of group2",
+		sess.get(f"{BASE}/group/member", params={"GroupID": groupId2}),
+		lambda res: len(res.json()) != 2
+	)
+	do("Check the transitive groups of user1",
+		sess.get(f"{BASE}/user/memberof", params={"UserID": userId1}),
+		lambda res: len(res.json()) != 2
 	)
 	# OTHER
 	do("OPTIONS /health",

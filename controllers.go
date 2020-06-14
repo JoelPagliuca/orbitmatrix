@@ -133,3 +133,20 @@ func addGroupMembers(w http.ResponseWriter, r *http.Request, in addGroupMembersI
 	w.WriteHeader(http.StatusNoContent)
 }
 
+type getTransitiveMembersInput struct {
+	GroupID uint `from:"query"`
+}
+
+func getTransitiveMembers(w http.ResponseWriter, r *http.Request, in getTransitiveMembersInput) []User {
+	usrs := GetTransitiveMembers(D, in.GroupID)
+	return usrs
+}
+
+type getTransitiveGroupsInput struct {
+	UserID uint `from:"query"`
+}
+
+func getTransitiveGroups(w http.ResponseWriter, r *http.Request, in getTransitiveGroupsInput) []Group {
+	grps := GetTransitiveMemberOf(D, in.UserID)
+	return grps
+}
