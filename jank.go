@@ -66,16 +66,20 @@ func (hw JankedHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				arg.Field(i).Set(val.Elem())
 			case "query":
 				q := r.URL.Query()
-				s := q.Get(fld.Name)
-				if fld.Type.Kind() == reflect.String {
-					arg.Field(i).Set(reflect.ValueOf(s))
-				} else if fld.Type.Kind() == reflect.Uint {
-					psd, err := strconv.ParseUint(s, 10, 64)
-					if err != nil {
-						log.Println(err.Error())
-						arg.Field(i).Set(reflect.ValueOf(uint(0)))
+				s, ok := q[fld.Name]
+				if !ok {
+					continue // maybe do something if the field was required
+				}
+				if fld.Type.Kind() == reflect.Slice {
+					slc := reflect.MakeSlice(fld.Type, 0, len(s))
+					for _, si := range s {
+						v := getValueFromString(fld.Type.Elem().Kind(), si)
+						slc = reflect.Append(slc, v)
 					}
-					arg.Field(i).Set(reflect.ValueOf(uint(psd)))
+					arg.Field(i).Set(slc)
+				} else {
+					v := getValueFromString(fld.Type.Kind(), s[0])
+					arg.Field(i).Set(v)
 				}
 			}
 		}
@@ -101,6 +105,23 @@ func (hw JankedHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 			w.Write(payload)
 		}
+	}
+}
+
+func getValueFromString(knd reflect.Kind, str string) reflect.Value {
+	switch knd {
+	case reflect.String:
+		return reflect.ValueOf(str)
+	case reflect.Uint:
+		psd, err := strconv.ParseUint(str, 10, 64)
+		if err != nil {
+			log.Println(err.Error())
+			return reflect.ValueOf(uint(0))
+		}
+		return reflect.ValueOf(uint(psd))
+	default:
+		log.Println("Unsupported input jank type")
+		return reflect.Value{}
 	}
 }
 

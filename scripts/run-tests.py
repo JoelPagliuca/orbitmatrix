@@ -65,6 +65,7 @@ def killServer(s: subprocess.Popen):
 
 def tests():
 	sess = requests.Session()
+	# MIDDLEWARE
 	do("GET /health",
 		sess.get(f"{BASE}/health"),
 		lambda res: res.status_code != 200
@@ -81,6 +82,7 @@ def tests():
 		sess.get(f"{BASE}/item"),
 		lambda res: res.status_code != 401
 	)
+	# USER
 	do("OPTIONS /user/register",
 		sess.options(f"{BASE}/user/register"),
 		lambda res: res.headers["Allow"] != "POST"
@@ -94,6 +96,7 @@ def tests():
 		sess.get(f"{BASE}/user/me"),
 		lambda res: res.json()["ID"] == 0 or res.json()["Name"] == ""
 	)
+	# ITEM
 	do("POST /item/add",
 		sess.post(f"{BASE}/item/add", data='{"name":"item1", "description":"item 1"}'),
 		lambda res: res.json()["ID"] == "" or res.json()["Name"] == ""
@@ -102,6 +105,7 @@ def tests():
 		sess.get(f"{BASE}/item"),
 		lambda res: len(res.json()) == 0
 	)
+	# GROUP
 	do("POST /group/add",
 		sess.post(f"{BASE}/group/add", data='{"name":"group1", "description":"group 1"}'),
 		lambda res: res.json()["ID"] == "" or res.json()["Name"] == ""
@@ -119,6 +123,7 @@ def tests():
 		sess.get(f"{BASE}/group", params={"GroupID": groupId}),
 		lambda res: res.json()[0]["Members"][0]["ID"] != userId
 	)
+	# OTHER
 	do("OPTIONS /health",
 		sess.options(f"{BASE}/health"),
 		lambda res: res.status_code != 204 or res.headers["Allow"] != "GET"

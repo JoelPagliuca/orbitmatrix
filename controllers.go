@@ -3,7 +3,6 @@ package main
 import (
 	"log"
 	"net/http"
-	"strconv"
 )
 
 type healthResponse struct {
@@ -107,28 +106,23 @@ func getGroups(w http.ResponseWriter, r *http.Request, in getGroupsInput) []Grou
 }
 
 type addGroupMembersInput struct {
-	GroupID uint `from:"query"`
-	UserID  []uint
+	GroupID    uint   `from:"query"`
+	UserID     []uint `from:"query"`
+	SubgroupID []uint `from:"query"`
 }
 
 func addGroupMembers(w http.ResponseWriter, r *http.Request, in addGroupMembersInput) {
-	q := r.URL.Query()
-	uidS, ok := q["UserID"]
-	if ok {
-		for _, u := range uidS {
-			uid, err := strconv.ParseUint(u, 10, 64)
-			if err != nil {
-				log.Println(err.Error())
-			}
-			in.UserID = append(in.UserID, uint(uid))
-		}
-	}
 	group := Group{}
 	D.First(&group, in.GroupID)
 	for _, u := range in.UserID {
 		us := User{}
 		us.ID = u
 		D.Model(&group).Association("Members").Append(us)
+	}
+	for _, g := range in.SubgroupID {
+		gr := Group{}
+		gr.ID = g
+		D.Model(&group).Association("Subgroups").Append(gr)
 	}
 	err := D.Error
 	if err != nil {
@@ -138,3 +132,4 @@ func addGroupMembers(w http.ResponseWriter, r *http.Request, in addGroupMembersI
 	}
 	w.WriteHeader(http.StatusNoContent)
 }
+
