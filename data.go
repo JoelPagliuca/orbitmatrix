@@ -49,7 +49,7 @@ type Group struct {
 
 // InitDB creates db object
 func InitDB() *gorm.DB {
-	filename, ok := os.LookupEnv("CALIBAN_DB_FILE")
+	filename, ok := os.LookupEnv("ORBITMATRIX_DB_FILE")
 	if !ok {
 		filename = ":memory:"
 	}

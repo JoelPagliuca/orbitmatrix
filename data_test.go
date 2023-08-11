@@ -10,7 +10,7 @@ import (
 )
 
 func newTestDB(t *testing.T) *gorm.DB {
-	os.Unsetenv("CALIBAN_DB_FILE")
+	os.Unsetenv("ORBITMATRIX_DB_FILE")
 	db := InitDB()
 	t.Cleanup(func() {
 		*db = *InitDB()

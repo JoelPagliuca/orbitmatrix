@@ -52,7 +52,7 @@ def serverLogs():
 def startServer():
 	print(f"{cols.BOLD}[*] starting the api{cols.ENDC}")
 	return subprocess.Popen(
-		"exec ./caliban",
+		"exec ./orbitmatrix",
 		stderr=subprocess.STDOUT,
 		stdout=subprocess.PIPE,
 		shell=True,
@@ -150,8 +150,8 @@ def tests():
 
 def main():
 	global PROC
-	caliban = startServer()
-	PROC = caliban
+	orbitmatrix = startServer()
+	PROC = orbitmatrix
 	time.sleep(0.1)
 	thread = threading.Thread(target=serverLogs)
 	thread.start()
@@ -159,7 +159,7 @@ def main():
 		tests()
 	except Exception as e:
 		print(f"{cols.FAIL}\n[-] Error running tests: {e}{cols.ENDC}")
-	killServer(caliban)
+	killServer(orbitmatrix)
 
 if __name__ == "__main__":
 	main()

@@ -1,4 +1,4 @@
-NAME := caliban
+NAME := orbitmatrix
 
 build: $(NAME)
 

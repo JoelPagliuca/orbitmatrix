@@ -29,7 +29,7 @@ var defaultRouteConfig = RouteConfig{
 
 // Routes all the routes for the api
 var Routes = []Route{
-	Route{
+	{
 		"/health",
 		healthcheck,
 		RouteConfig{
@@ -37,12 +37,12 @@ var Routes = []Route{
 			AllowedMethods: []string{"GET"},
 		},
 	},
-	Route{
+	{
 		"/user/me",
 		getMe,
 		defaultRouteConfig,
 	},
-	Route{
+	{
 		"/user/register",
 		registerUser,
 		RouteConfig{
@@ -50,32 +50,32 @@ var Routes = []Route{
 			AllowedMethods: []string{"POST"},
 		},
 	},
-	Route{
+	{
 		"/item",
 		getItems,
 		defaultRouteConfig,
 	},
-	Route{
+	{
 		"/item/add",
 		addItem,
 		defaultRouteConfig,
 	},
-	Route{
+	{
 		"/group/add",
 		createGroup,
 		defaultRouteConfig,
 	},
-	Route{
+	{
 		"/group",
 		getGroups,
 		defaultRouteConfig,
 	},
-	Route{
+	{
 		"/group/member/add",
 		addGroupMembers,
 		defaultRouteConfig,
 	},
-	Route{
+	{
 		"/group/member",
 		getTransitiveMembers,
 		RouteConfig{
@@ -83,7 +83,7 @@ var Routes = []Route{
 			AllowedMethods: []string{"GET"},
 		},
 	},
-	Route{
+	{
 		"/user/memberof",
 		getTransitiveGroups,
 		RouteConfig{

@@ -1,4 +1,4 @@
-module github.com/JoelPagliuca/caliban
+module github.com/JoelPagliuca/orbitmatrix
 
 go 1.14
 
